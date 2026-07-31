@@ -15,7 +15,7 @@ body:
     attributes:
       label: IN-Qのバージョン
       description: IN-Qの画面に表示されているバージョンを入力してください。
-      placeholder: 例: 0.4.42
+      placeholder: "例: 0.4.42"
     validations:
       required: true
 
@@ -23,7 +23,7 @@ body:
     id: mhw_build
     attributes:
       label: MHWのバージョンまたはビルド
-      placeholder: 例: 421810
+      placeholder: "例: 421810"
     validations:
       required: true
 
@@ -44,7 +44,7 @@ body:
     attributes:
       label: クエストID
       description: 分かる場合だけ入力してください。
-      placeholder: 例: 66845
+      placeholder: "例: 66845"
 
   - type: textarea
     id: summary
