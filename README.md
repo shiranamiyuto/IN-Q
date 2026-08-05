@@ -6,7 +6,7 @@ Monster Hunter: World Iceborne向けのクエスト再スタート支援ツー�
 
 ## ダウンロード
 
-公開版は[Releases](https://github.com/shiranamiyuto/IN-Q/releases)から配布します。現在は公開準備中です。
+最新版は[Releases](https://github.com/shiranamiyuto/IN-Q/releases)からダウンロードできます。
 
 ## 不具合を報告する
 
