@@ -5,7 +5,6 @@ on:
   push:
     branches:
       - main
-      - multi-language-templates
     paths:
       - ".github/ISSUE_TEMPLATE/bug-report-ja.yml"
       - "scripts/**"
