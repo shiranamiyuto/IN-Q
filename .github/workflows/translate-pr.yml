@@ -24,6 +24,20 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Debug pull request event context
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_REPOSITORY: ${{ github.event.pull_request.base.repo.full_name }}
+          HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          PR_ACTION: ${{ github.event.action }}
+        run: |
+          echo "Event: $EVENT_NAME"
+          echo "Base repository: $BASE_REPOSITORY"
+          echo "Head repository: $HEAD_REPOSITORY"
+          echo "Head branch: $HEAD_REF"
+          echo "PR action: $PR_ACTION"
+
       - name: Checkout base repository default branch
         uses: actions/checkout@v6
         with:
