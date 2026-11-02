@@ -5,9 +5,13 @@ COMMENT_MARKER = "<!-- inq-auto-translation -->"
 
 COMMENT_HEADER = "## 日本語訳（自動翻訳）"
 
+COMMENT_TITLE = "### タイトル"
+
+COMMENT_DESCRIPTION = "### 説明"
+
 COMMENT_FOOTER = (
-    "Translated from English to Japanese. "
-    "This translation is provided for reference only."
+    "英語から日本語への自動翻訳です。"
+    "参考情報としてご利用ください。"
 )
 
 
@@ -28,14 +32,14 @@ def format_translation_comment(
         COMMENT_MARKER,
         COMMENT_HEADER,
         "",
-        "### Title",
+        COMMENT_TITLE,
         title,
     ]
 
     if body and body.strip():
         sections.extend([
             "",
-            "### Description",
+            COMMENT_DESCRIPTION,
             body,
         ])
 

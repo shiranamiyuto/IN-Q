@@ -7,6 +7,10 @@ on:
       - edited
       - reopened
 
+concurrency:
+  group: translate-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
 permissions:
   pull-requests: write
   issues: read

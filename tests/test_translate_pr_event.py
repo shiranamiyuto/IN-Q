@@ -75,8 +75,94 @@ class TestLoadPullRequestEvent(unittest.TestCase):
             os.unlink(event_path)
 
 
+class TestIsStalePullRequestEvent(unittest.TestCase):
+
+    @patch("scripts.translate_pr_event.get_current_pull_request")
+    def test_current_pr_matches_event(self, mock_get_current_pr):
+        mock_get_current_pr.return_value = {
+            "title": "Fix initialization error",
+            "body": "The application fails during startup.",
+        }
+
+        result = translate_pr_event.is_stale_pull_request_event(
+            token="test-token",
+            repository="owner/repo",
+            pull_request_number=42,
+            event_title="Fix initialization error",
+            event_body="The application fails during startup.",
+            api_url="https://api.github.com",
+        )
+
+        self.assertFalse(result)
+
+        mock_get_current_pr.assert_called_once_with(
+            token="test-token",
+            repository="owner/repo",
+            pull_request_number=42,
+            api_url="https://api.github.com",
+        )
+
+    @patch("scripts.translate_pr_event.get_current_pull_request")
+    def test_stale_when_title_changed(self, mock_get_current_pr):
+        mock_get_current_pr.return_value = {
+            "title": "Fix startup failure",
+            "body": "The application fails during startup.",
+        }
+
+        result = translate_pr_event.is_stale_pull_request_event(
+            token="test-token",
+            repository="owner/repo",
+            pull_request_number=42,
+            event_title="Fix initialization error",
+            event_body="The application fails during startup.",
+            api_url="https://api.github.com",
+        )
+
+        self.assertTrue(result)
+
+    @patch("scripts.translate_pr_event.get_current_pull_request")
+    def test_stale_when_body_changed(self, mock_get_current_pr):
+        mock_get_current_pr.return_value = {
+            "title": "Fix initialization error",
+            "body": "The application crashes during startup.",
+        }
+
+        result = translate_pr_event.is_stale_pull_request_event(
+            token="test-token",
+            repository="owner/repo",
+            pull_request_number=42,
+            event_title="Fix initialization error",
+            event_body="The application fails during startup.",
+            api_url="https://api.github.com",
+        )
+
+        self.assertTrue(result)
+
+    @patch("scripts.translate_pr_event.get_current_pull_request")
+    def test_none_current_body_matches_empty_event_body(
+        self,
+        mock_get_current_pr,
+    ):
+        mock_get_current_pr.return_value = {
+            "title": "Fix initialization error",
+            "body": None,
+        }
+
+        result = translate_pr_event.is_stale_pull_request_event(
+            token="test-token",
+            repository="owner/repo",
+            pull_request_number=42,
+            event_title="Fix initialization error",
+            event_body="",
+            api_url="https://api.github.com",
+        )
+
+        self.assertFalse(result)
+
+
 class TestMain(unittest.TestCase):
 
+    @patch("scripts.translate_pr_event.get_current_pull_request")
     @patch("scripts.translate_pr_event.sync_translation_comment")
     @patch("scripts.translate_pr_event.GitHubCommentsAPI")
     @patch("scripts.translate_pr_event.translate_pull_request")
@@ -91,6 +177,7 @@ class TestMain(unittest.TestCase):
         mock_translate,
         mock_api_class,
         mock_sync_comment,
+        mock_get_current_pr,
     ):
         mock_load_event.return_value = {
             "number": 42,
@@ -111,6 +198,11 @@ class TestMain(unittest.TestCase):
             "translated_fields": ["title", "body"],
         }
         mock_translate.return_value = translated_pr
+
+        mock_get_current_pr.return_value = {
+            "title": "Fix initialization error",
+            "body": "The application fails during startup.",
+        }
 
         api = Mock()
         mock_api_class.return_value = api
@@ -134,6 +226,13 @@ class TestMain(unittest.TestCase):
             title="Fix initialization error",
             body="The application fails during startup.",
             translator=translator,
+        )
+
+        mock_get_current_pr.assert_called_once_with(
+            token="test-token",
+            repository="owner/repo",
+            pull_request_number=42,
+            api_url="https://api.github.com",
         )
 
         mock_api_class.assert_called_once_with(

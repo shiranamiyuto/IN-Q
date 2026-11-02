@@ -1,9 +1,6 @@
 from typing import Any
 
-from scripts.pr_comment import (
-    COMMENT_MARKER,
-    format_translation_comment,
-)
+from scripts.pr_comment import COMMENT_MARKER, format_translation_comment
 
 
 def find_translation_comments(

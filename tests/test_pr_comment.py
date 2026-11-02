@@ -1,9 +1,11 @@
 import unittest
 
 from scripts.pr_comment import (
+    COMMENT_DESCRIPTION,
     COMMENT_FOOTER,
     COMMENT_HEADER,
     COMMENT_MARKER,
+    COMMENT_TITLE,
     format_translation_comment,
 )
 
@@ -20,9 +22,9 @@ class TestFormatTranslationComment(unittest.TestCase):
 
         self.assertIn(COMMENT_MARKER, result)
         self.assertIn(COMMENT_HEADER, result)
-        self.assertIn("### Title", result)
+        self.assertIn(COMMENT_TITLE, result)
         self.assertIn("初期化エラーを修正", result)
-        self.assertIn("### Description", result)
+        self.assertIn(COMMENT_DESCRIPTION, result)
         self.assertIn("起動時にエラーが発生します。", result)
         self.assertIn(COMMENT_FOOTER, result)
 
@@ -35,7 +37,7 @@ class TestFormatTranslationComment(unittest.TestCase):
         result = format_translation_comment(translated_pr)
 
         self.assertIn("初期化エラーを修正", result)
-        self.assertNotIn("### Description", result)
+        self.assertNotIn(COMMENT_DESCRIPTION, result)
         self.assertNotIn("None", result)
 
     def test_empty_body_string(self):
@@ -47,7 +49,7 @@ class TestFormatTranslationComment(unittest.TestCase):
         result = format_translation_comment(translated_pr)
 
         self.assertIn("初期化エラーを修正", result)
-        self.assertNotIn("### Description", result)
+        self.assertNotIn(COMMENT_DESCRIPTION, result)
 
     def test_whitespace_body(self):
         translated_pr = {
@@ -58,7 +60,7 @@ class TestFormatTranslationComment(unittest.TestCase):
         result = format_translation_comment(translated_pr)
 
         self.assertIn("初期化エラーを修正", result)
-        self.assertNotIn("### Description", result)
+        self.assertNotIn(COMMENT_DESCRIPTION, result)
 
 
 if __name__ == "__main__":

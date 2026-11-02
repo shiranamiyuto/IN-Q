@@ -1,6 +1,8 @@
 import json
 import os
 from pathlib import Path
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 
 from dotenv import load_dotenv
 
@@ -13,6 +15,27 @@ from scripts.translators import create_translator
 ROOT = Path(__file__).resolve().parent.parent
 
 BOT_LOGIN = "github-actions[bot]"
+
+
+def get_github_config() -> dict[str, str]:
+    token = os.getenv("GITHUB_TOKEN")
+    repository = os.getenv("GITHUB_REPOSITORY")
+    api_url = os.getenv(
+        "GITHUB_API_URL",
+        "https://api.github.com",
+    )
+
+    if not token:
+        raise RuntimeError("GITHUB_TOKEN is not configured.")
+
+    if not repository:
+        raise RuntimeError("GITHUB_REPOSITORY is not configured.")
+
+    return {
+        "token": token,
+        "repository": repository,
+        "api_url": api_url,
+    }
 
 
 def load_pull_request_event() -> dict:
@@ -38,8 +61,91 @@ def load_pull_request_event() -> dict:
     return pull_request
 
 
+def get_current_pull_request(
+    token: str,
+    repository: str,
+    pull_request_number: int,
+    api_url: str,
+) -> dict:
+    url = (
+        f"{api_url}/repos/"
+        f"{repository}/pulls/{pull_request_number}"
+    )
+
+    request = Request(
+        url,
+        headers={
+            "Accept": "application/vnd.github+json",
+            "Authorization": f"Bearer {token}",
+            "X-GitHub-Api-Version": "2022-11-28",
+            "User-Agent": "IN-Q-PR-Translator",
+        },
+        method="GET",
+    )
+
+    try:
+        with urlopen(request, timeout=30) as response:
+            return json.loads(response.read().decode("utf-8"))
+
+    except HTTPError as error:
+        response_body = error.read().decode(
+            "utf-8",
+            errors="replace",
+        )
+
+        raise RuntimeError(
+            "Failed to fetch current pull request: "
+            f"HTTP {error.code}: {response_body}"
+        ) from error
+
+    except URLError as error:
+        raise RuntimeError(
+            f"Failed to connect to GitHub API: {error}"
+        ) from error
+
+
+def is_stale_pull_request_event(
+    token: str,
+    repository: str,
+    pull_request_number: int,
+    event_title: str,
+    event_body: str,
+    api_url: str,
+) -> bool:
+    current_pr = get_current_pull_request(
+        token=token,
+        repository=repository,
+        pull_request_number=pull_request_number,
+        api_url=api_url,
+    )
+
+    current_title = current_pr.get("title") or ""
+    current_body = current_pr.get("body") or ""
+
+    if (
+        current_title != event_title
+        or current_body != event_body
+    ):
+        print(
+            "PR has changed since this event was triggered. "
+            "Skipping stale event."
+        )
+
+        print(f"Event title: {event_title!r}")
+        print(f"Current title: {current_title!r}")
+
+        print(f"Event body: {event_body!r}")
+        print(f"Current body: {current_body!r}")
+
+        return True
+
+    return False
+
+
 def main() -> None:
     load_dotenv(ROOT / ".env")
+
+    github_config = get_github_config()
 
     pull_request = load_pull_request_event()
 
@@ -50,7 +156,9 @@ def main() -> None:
     if not isinstance(title, str):
         raise RuntimeError("Pull request title is missing or invalid.")
 
-    if body is not None and not isinstance(body, str):
+    if body is None:
+        body = ""
+    elif not isinstance(body, str):
         raise RuntimeError("Pull request body has an invalid format.")
 
     if not isinstance(issue_number, int):
@@ -64,13 +172,20 @@ def main() -> None:
         translator=translator,
     )
 
+    if is_stale_pull_request_event(
+        token=github_config["token"],
+        repository=github_config["repository"],
+        pull_request_number=issue_number,
+        event_title=title,
+        event_body=body,
+        api_url=github_config["api_url"],
+    ):
+        return
+
     api = GitHubCommentsAPI(
-        token=os.getenv("GITHUB_TOKEN", ""),
-        repository=os.getenv("GITHUB_REPOSITORY", ""),
-        api_url=os.getenv(
-            "GITHUB_API_URL",
-            "https://api.github.com",
-        ),
+        token=github_config["token"],
+        repository=github_config["repository"],
+        api_url=github_config["api_url"],
     )
 
     action = sync_translation_comment(
