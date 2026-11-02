@@ -8,8 +8,8 @@ on:
       - reopened
 
 permissions:
-  pull-requests: read
-  issues: write
+  pull-requests: write
+  issues: read
 
 jobs:
   translate-pr:
