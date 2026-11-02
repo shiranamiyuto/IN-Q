@@ -1,7 +1,6 @@
 import copy
-import os
+import logging
 import re
-from collections import Counter
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -16,6 +15,7 @@ from ruamel.yaml.scalarstring import (
 
 from translators import create_translator
 
+logger = logging.getLogger(__name__)
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -27,10 +27,12 @@ LANGUAGES = {
     "en": {
         "name": "English",
         "code": "English",
+        "language_code": "en",
     },
     "cn": {
         "name": "Simplified Chinese",
         "code": "Simplified Chinese",
+        "language_code": "zh",
     },
 }
 
@@ -294,11 +296,70 @@ def validate_template(source, target, paths):
     validate_ids(source, target)
 
 
+def validate_translation_languages(
+    translations,
+    paths,
+    translator,
+    expected_language,
+):
+    """
+    Verify that translations use the expected target language.
+
+    Results classified as "unknown" are allowed because some
+    short strings may not contain enough linguistic information.
+    """
+
+    detected_languages = translator.detect_language(translations)
+
+    if len(detected_languages) != len(translations):
+        raise ValueError(
+            "Language validation count does not match translation count."
+        )
+
+    valid_languages = {
+        "ja",
+        "en",
+        "zh",
+        "mixed",
+        "unknown",
+    }
+
+    if any(
+        language not in valid_languages
+        for language in detected_languages
+    ):
+        raise ValueError(
+            "Language detection returned an invalid language code."
+        )
+
+    errors = []
+
+    for path, detected in zip(paths, detected_languages):
+        if detected in {expected_language, "unknown"}:
+            continue
+
+        field = ".".join(str(part) for part in path)
+
+        errors.append(
+            f"{field}: expected {expected_language}, "
+            f"detected {detected}"
+        )
+
+    if errors:
+        details = "\n".join(errors)
+
+        raise ValueError(
+            "Translation language validation failed:\n"
+            f"{details}"
+        )
+
+
 def translate_template(
     source,
     paths,
     translator,
     target_language,
+    target_language_code,
 ):
     result = copy.deepcopy(source)
 
@@ -328,17 +389,38 @@ def translate_template(
             "Unexpected number of translated fields."
         )
 
-    for path, original, translated, protected in zip(
-        paths,
-        original_texts,
-        translations,
-        [item[1] for item in protected_items],
+    restored_translations = []
+
+    for field_number, (original, translated, protected) in enumerate(
+        zip(
+            original_texts,
+            translations,
+            [item[1] for item in protected_items],
+        ),
+        start=1,
     ):
-        restored = restore_text(
-            translated,
-            protected,
+        restored = restore_text(translated, protected)
+        restored_translations.append(restored)
+
+        logger.debug(
+            "Field %d\nOriginal: %s\nTranslated: %s",
+            field_number,
+            original,
+            restored,
         )
 
+    validate_translation_languages(
+        translations=restored_translations,
+        paths=paths,
+        translator=translator,
+        expected_language=target_language_code,
+    )
+
+    for path, original, restored in zip(
+        paths,
+        original_texts,
+        restored_translations,
+    ):
         set_path(
             result,
             path,
@@ -365,8 +447,8 @@ def main():
             "No translatable fields found in source template."
         )
 
-    print(f"Source: {SOURCE_FILE.name}")
-    print(f"Translatable fields: {len(paths)}")
+    logger.info("Source: %s", SOURCE_FILE.name)
+    logger.info("Translatable fields: %d", len(paths))
 
     translator = create_translator()
 
@@ -374,13 +456,14 @@ def main():
     generated = {}
 
     for suffix, language in LANGUAGES.items():
-        print(f"\nTranslating to {language['name']}...")
+        logger.info("Translating to %s...", language["name"])
 
         translated = translate_template(
             source=source,
             paths=paths,
             translator=translator,
             target_language=language["code"],
+            target_language_code=language["language_code"],
         )
 
         validate_template(
@@ -391,7 +474,7 @@ def main():
 
         generated[suffix] = translated
 
-        print(f"Validation passed: {language['name']}")
+        logger.info("Validation passed: %s", language["name"])
 
     # Write files only after every target has passed validation.
     for suffix, translated in generated.items():
@@ -401,10 +484,14 @@ def main():
 
         save_yaml(translated, output_file)
 
-        print(f"Generated: {output_file.relative_to(ROOT)}")
+        logger.info("Generated: %s", output_file.relative_to(ROOT))
 
-    print("\nAll templates generated successfully.")
+    logger.info("All templates generated successfully.")
 
 
 if __name__ == "__main__":
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(message)s",
+    )
     main()
