@@ -1,5 +1,6 @@
 import json
 from urllib.parse import urlencode
+from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 
@@ -51,8 +52,21 @@ class GitHubCommentsAPI:
             method=method,
         )
 
-        with urlopen(request, timeout=30) as response:
-            response_body = response.read()
+        try:
+            with urlopen(request, timeout=30) as response:
+                response_body = response.read()
+
+        except HTTPError as error:
+            error_body = error.read().decode(
+                "utf-8",
+                errors="replace",
+            )
+
+            raise RuntimeError(
+                f"GitHub API request failed: "
+                f"{method} {path} "
+                f"(HTTP {error.code}): {error_body}"
+            ) from error
 
         if not response_body:
             return None
