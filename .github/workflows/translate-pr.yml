@@ -19,6 +19,7 @@ jobs:
   translate-pr:
     if: >-
       github.event.pull_request.head.ref != 'automation/update-issue-templates' &&
+      github.event.pull_request.head.ref != 'automation/update-translated-documents' &&
       (
         github.event.action != 'edited' ||
         github.event.changes.title != null ||
