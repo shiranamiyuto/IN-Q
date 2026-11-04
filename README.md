@@ -1,5 +1,7 @@
 # IN-Q V2
 
+[日本語](README.md) | [English](readme/README.en.md) | [简体中文](readme/README.cn.md)
+
 Monster Hunter: World Iceborne向けのクエスト再スタート支援ツールです。
 
 このリポジトリは、IN-Q V2の配布と不具合報告の受付に使用します。ソースコードと内部の開発資料は公開していません。
@@ -10,12 +12,12 @@ Monster Hunter: World Iceborne向けのクエスト再スタート支援ツー�
 
 ## 不具合を報告する
 
-[不具合報告フォーム](https://github.com/shiranamiyuto/IN-Q/issues/new?template=bug-report.yml)を使用してください。
+[不具合報告フォーム](https://github.com/shiranamiyuto/IN-Q/issues/new?template=bug-report-ja.yml)を使用してください。
 
 報告前に、次の点を確認してください。
 
 - 同じ内容が[既存のIssue](https://github.com/shiranamiyuto/IN-Q/issues)にないか確認する
-- IN-QとMHWのバージョンを記載する
+- IN-Q / MHW のバージョンを記載する
 - 再現手順、期待した結果、実際の結果を記載する
 - ログに個人情報や認証情報が含まれていないことを確認する
 
