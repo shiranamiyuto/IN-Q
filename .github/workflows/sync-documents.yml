@@ -1,4 +1,3 @@
-
 name: Sync Translated Documents
 
 on:
@@ -43,8 +42,10 @@ jobs:
         run: |
           if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
             documents=(README PRIVACY)
+
           elif [[ -z "$BEFORE" || "$BEFORE" =~ ^0+$ ]]; then
             documents=(README PRIVACY)
+
           else
             changed_files="$(git diff --name-only "$BEFORE" "$AFTER")"
 
@@ -88,32 +89,46 @@ jobs:
           echo "Documents to translate: ${documents[*]}"
           echo "documents=${documents[*]}" >> "$GITHUB_OUTPUT"
 
-      - name: Restore existing translated documents
+      - name: Determine generated files to commit
+        id: paths
         env:
-          PR_BRANCH: automation/update-translated-documents
+          DOCUMENTS: ${{ steps.selection.outputs.documents }}
         run: |
-          set +e
-          git ls-remote --exit-code --heads origin "$PR_BRANCH" >/dev/null
-          status=$?
-          set -e
+          case "$DOCUMENTS" in
+            README)
+              paths=(
+                readme/README.en.md
+                readme/README.cn.md
+              )
+              ;;
+            PRIVACY)
+              paths=(
+                privacy/PRIVACY.en.md
+                privacy/PRIVACY.cn.md
+              )
+              ;;
+            "README PRIVACY")
+              paths=(
+                readme/README.en.md
+                readme/README.cn.md
+                privacy/PRIVACY.en.md
+                privacy/PRIVACY.cn.md
+              )
+              ;;
+            *)
+              echo "::error::Unexpected document selection: $DOCUMENTS"
+              exit 1
+              ;;
+          esac
 
-          if [[ "$status" -eq 0 ]]; then
-            echo "Existing translation branch found. Restoring its generated files."
+          echo "Files to commit:"
+          printf '%s\n' "${paths[@]}"
 
-            git fetch --no-tags origin "refs/heads/$PR_BRANCH"
-
-            git restore --source=FETCH_HEAD --worktree -- \
-              readme/README.en.md \
-              readme/README.cn.md \
-              privacy/PRIVACY.en.md \
-              privacy/PRIVACY.cn.md
-
-          elif [[ "$status" -eq 2 ]]; then
-            echo "No existing translation branch. Using files from the base branch."
-          else
-            echo "::error::Failed to check the existing translation branch."
-            exit "$status"
-          fi
+          {
+            echo "add_paths<<EOF"
+            printf '%s\n' "${paths[@]}"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -159,6 +174,7 @@ jobs:
           branch: automation/update-translated-documents
           base: ${{ github.event.repository.default_branch }}
           delete-branch: true
+          add-paths: ${{ steps.paths.outputs.add_paths }}
           title: "翻訳ドキュメントを更新"
           body: |
             日本語の原文をもとに、対象ドキュメントの英語版と簡体字中国語版を自動生成しました。
