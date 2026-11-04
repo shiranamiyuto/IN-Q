@@ -65,9 +65,9 @@ jobs:
           base: ${{ github.ref_name }}
           delete-branch: true
           commit-message: "chore: update translated issue templates"
-          title: "chore: update translated issue templates"
+          title: "不具合報告テンプレートの翻訳を更新"
           body: |
-            This PR contains automatically generated translations
-            based on the Japanese issue template.
+            このPRには、日本語版のIssueテンプレートをもとに
+            自動生成した英語版・中国語（簡体字）版の更新が含まれています。
 
-            Please review the translated templates before merging.
+            マージ前に、翻訳内容とテンプレートの構成をご確認ください。
