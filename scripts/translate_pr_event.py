@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 from pathlib import Path
 from urllib.error import HTTPError, URLError
@@ -11,6 +12,8 @@ from scripts.pr_comment_manager import sync_translation_comment
 from scripts.pr_translator import translate_pull_request
 from scripts.translators import create_translator
 
+
+logger = logging.getLogger(__name__)
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -126,16 +129,16 @@ def is_stale_pull_request_event(
         current_title != event_title
         or current_body != event_body
     ):
-        print(
+        logger.info(
             "PR has changed since this event was triggered. "
             "Skipping stale event."
         )
 
-        print(f"Event title: {event_title!r}")
-        print(f"Current title: {current_title!r}")
+        logger.debug("Event title: %r", event_title)
+        logger.debug("Current title: %r", current_title)
 
-        print(f"Event body: {event_body!r}")
-        print(f"Current body: {current_body!r}")
+        logger.debug("Event body: %r", event_body)
+        logger.debug("Current body: %r", current_body)
 
         return True
 
@@ -195,11 +198,22 @@ def main() -> None:
         bot_login=BOT_LOGIN,
     )
 
-    print(f"Pull Request: #{issue_number}")
-    print(f"Detected languages: {translated_pr['languages']}")
-    print(f"Translated fields: {translated_pr['translated_fields']}")
-    print(f"Comment action: {action}")
+    logger.info("Pull Request: #%s", issue_number)
+    logger.info(
+        "Detected languages: %s",
+        translated_pr["languages"],
+    )
+    logger.info(
+        "Translated fields: %s",
+        translated_pr["translated_fields"],
+    )
+    logger.info("Comment action: %s", action)
 
 
 if __name__ == "__main__":
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(message)s",
+    )
+
     main()
