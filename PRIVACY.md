@@ -1,5 +1,7 @@
 # 診断情報とプライバシー
 
+[日本語](PRIVACY.md) | [English](privacy/PRIVACY.en.md) | [简体中文](privacy/PRIVACY.cn.md)
+
 ## 基本方針
 
 IN-Q V2は、利用者が明示的に不具合報告を実行するまで、診断情報を外部へ送信しません。

@@ -1,3 +1,4 @@
+
 import unittest
 from unittest.mock import Mock
 
@@ -5,6 +6,7 @@ from scripts import sync_documents
 
 
 class TestLocalizeReadmeLinks(unittest.TestCase):
+    """Test README-specific link localization."""
 
     def test_english_links(self):
         text = (
@@ -16,7 +18,10 @@ class TestLocalizeReadmeLinks(unittest.TestCase):
         result = sync_documents.localize_readme_links(text, "en")
 
         self.assertIn("template=bug-report-en.yml", result)
-        self.assertIn("[Privacy Policy](../PRIVACY.md)", result)
+        self.assertIn(
+            "[Privacy Policy](../privacy/PRIVACY.en.md)",
+            result,
+        )
 
     def test_chinese_links(self):
         text = (
@@ -28,14 +33,145 @@ class TestLocalizeReadmeLinks(unittest.TestCase):
         result = sync_documents.localize_readme_links(text, "zh")
 
         self.assertIn("template=bug-report-cn.yml", result)
-        self.assertIn("[隐私政策](../PRIVACY.md)", result)
+        self.assertIn(
+            "[隐私政策](../privacy/PRIVACY.cn.md)",
+            result,
+        )
 
     def test_unsupported_language(self):
         with self.assertRaises(ValueError):
             sync_documents.localize_readme_links("README", "ja")
 
 
+class TestLocalizePrivacyLinks(unittest.TestCase):
+    """Test that Privacy documents are not processed as READMEs."""
+
+    def test_privacy_links_remain_unchanged(self):
+        text = (
+            "[Privacy Policy](PRIVACY.md)\n"
+            "[Bug Report](https://github.com/shiranamiyuto/"
+            "IN-Q/issues/new?template=bug-report-ja.yml)"
+        )
+
+        result = sync_documents.localize_document_links(
+            text=text,
+            language="en",
+            document_name="PRIVACY",
+        )
+
+        self.assertEqual(result, text)
+
+    def test_unsupported_language(self):
+        with self.assertRaises(ValueError):
+            sync_documents.localize_document_links(
+                text="Privacy Policy",
+                language="ja",
+                document_name="PRIVACY",
+            )
+
+
+class TestLanguageSwitch(unittest.TestCase):
+    """Test README language switch generation."""
+
+    def test_add_english_language_switch(self):
+        source = "# IN-Q V2\n\nEnglish content.\n"
+
+        result = sync_documents.add_language_switch(source, "en")
+
+        self.assertIn(
+            "[English](README.en.md)",
+            result,
+        )
+        self.assertIn(
+            "[日本語](../README.md)",
+            result,
+        )
+
+        self.assertLess(
+            result.index("# IN-Q V2"),
+            result.index("[English]"),
+        )
+
+    def test_add_chinese_language_switch(self):
+        source = "# IN-Q V2\n\n中文内容。\n"
+
+        result = sync_documents.add_language_switch(source, "zh")
+
+        self.assertIn(
+            "[简体中文](README.cn.md)",
+            result,
+        )
+
+    def test_missing_heading_fails(self):
+        with self.assertRaises(ValueError):
+            sync_documents.add_language_switch(
+                "Document without heading.",
+                "en",
+            )
+
+
+class TestPrivacyLanguageSwitch(unittest.TestCase):
+    """Test Privacy Policy language switch generation."""
+
+    def test_add_english_language_switch(self):
+        result = sync_documents.add_language_switch(
+            "# Privacy Policy\n\nContent.",
+            "en",
+            "PRIVACY",
+        )
+
+        self.assertIn(
+            "[日本語](../PRIVACY.md)",
+            result,
+        )
+        self.assertIn(
+            "[English](PRIVACY.en.md)",
+            result,
+        )
+        self.assertIn(
+            "[简体中文](PRIVACY.cn.md)",
+            result,
+        )
+
+    def test_add_chinese_language_switch(self):
+        result = sync_documents.add_language_switch(
+            "# 隐私政策\n\n内容。",
+            "zh",
+            "PRIVACY",
+        )
+
+        self.assertIn(
+            "[日本語](../PRIVACY.md)",
+            result,
+        )
+        self.assertIn(
+            "[English](PRIVACY.en.md)",
+            result,
+        )
+        self.assertIn(
+            "[简体中文](PRIVACY.cn.md)",
+            result,
+        )
+
+    def test_unsupported_document_fails(self):
+        with self.assertRaises(ValueError):
+            sync_documents.add_language_switch(
+                "# Test\n\nContent.",
+                "en",
+                "UNKNOWN",
+            )
+
+    def test_unsupported_language_fails(self):
+        with self.assertRaises(ValueError):
+            sync_documents.add_language_switch(
+                "# 测试\n\n内容。",
+                "ja",
+                "PRIVACY",
+            )
+
+
 class TestProtectText(unittest.TestCase):
+    """Test protection and restoration of Markdown content."""
 
     def test_protect_markdown_content(self):
         source = (
@@ -88,46 +224,8 @@ class TestProtectText(unittest.TestCase):
             sync_documents.restore_text(reversed_text, items)
 
 
-class TestLanguageSwitch(unittest.TestCase):
-
-    def test_add_english_language_switch(self):
-        source = "# IN-Q V2\n\nEnglish content.\n"
-
-        result = sync_documents.add_language_switch(source, "en")
-
-        self.assertIn(
-            "[English](README.en.md)",
-            result,
-        )
-        self.assertIn(
-            "[日本語](../README.md)",
-            result,
-        )
-
-        self.assertLess(
-            result.index("# IN-Q V2"),
-            result.index("[English]"),
-        )
-
-    def test_add_chinese_language_switch(self):
-        source = "# IN-Q V2\n\n中文内容。\n"
-
-        result = sync_documents.add_language_switch(source, "zh")
-
-        self.assertIn(
-            "[简体中文](README.cn.md)",
-            result,
-        )
-
-    def test_missing_heading_fails(self):
-        with self.assertRaises(ValueError):
-            sync_documents.add_language_switch(
-                "Document without heading.",
-                "en",
-            )
-
-
 class TestMarkdownStructure(unittest.TestCase):
+    """Test Markdown structure validation."""
 
     def test_same_structure_passes(self):
         source = (
@@ -160,6 +258,7 @@ class TestMarkdownStructure(unittest.TestCase):
 
 
 class TestTranslateDocument(unittest.TestCase):
+    """Test document translation and its validation pipeline."""
 
     def test_successful_translation(self):
         source = (
@@ -169,15 +268,15 @@ class TestTranslateDocument(unittest.TestCase):
 
         translator = Mock()
 
-        def translate(texts, source, target):
-            return [
+        translator.translate_many.side_effect = (
+            lambda texts, source, target: [
                 texts[0].replace(
                     "ダウンロードしてください。",
                     "Please download the application.",
                 )
             ]
+        )
 
-        translator.translate_many.side_effect = translate
         translator.detect_language.return_value = ["en"]
 
         result = sync_documents.translate_document(
@@ -191,7 +290,6 @@ class TestTranslateDocument(unittest.TestCase):
             "Please download the application.",
             result,
         )
-
         self.assertIn("# IN-Q V2", result)
 
     def test_wrong_language_fails(self):
@@ -245,7 +343,10 @@ class TestTranslateDocument(unittest.TestCase):
             lambda texts, source, target: [
                 texts[0]
                 .replace("不具合報告フォーム", "Bug Report Form")
-                .replace("診断情報については", "For diagnostic information, see ")
+                .replace(
+                    "診断情報については",
+                    "For diagnostic information, see ",
+                )
                 .replace("を参照してください。", ".")
             ]
         )
@@ -260,7 +361,10 @@ class TestTranslateDocument(unittest.TestCase):
         )
 
         self.assertIn("template=bug-report-en.yml", result)
-        self.assertIn("[PRIVACY.md](../PRIVACY.md)", result)
+        self.assertIn(
+            "[PRIVACY.md](../privacy/PRIVACY.en.md)",
+            result,
+        )
 
     def test_translation_localizes_chinese_links(self):
         source = (
@@ -285,7 +389,75 @@ class TestTranslateDocument(unittest.TestCase):
         )
 
         self.assertIn("bug-report-cn.yml", result)
-        self.assertIn("../PRIVACY.md", result)
+        self.assertIn("../privacy/PRIVACY.cn.md", result)
+
+
+class TestDocumentConfiguration(unittest.TestCase):
+    """Test language configuration and document output paths."""
+
+    def test_privacy_output_paths(self):
+        self.assertEqual(
+            sync_documents.DOCUMENTS["PRIVACY"]["outputs"]["en"],
+            sync_documents.ROOT / "privacy" / "PRIVACY.en.md",
+        )
+        self.assertEqual(
+            sync_documents.DOCUMENTS["PRIVACY"]["outputs"]["cn"],
+            sync_documents.ROOT / "privacy" / "PRIVACY.cn.md",
+        )
+
+    def test_all_languages_have_required_configuration(self):
+        required_keys = {
+            "name",
+            "code",
+            "language_code",
+            "issue_template",
+            "privacy_file",
+        }
+
+        language_codes = []
+        issue_templates = []
+        privacy_files = []
+
+        for suffix, config in sync_documents.LANGUAGES.items():
+            with self.subTest(language=suffix):
+                self.assertTrue(required_keys.issubset(config))
+
+                self.assertIn(
+                    suffix,
+                    sync_documents.DOCUMENTS["README"]["outputs"],
+                )
+                self.assertIn(
+                    suffix,
+                    sync_documents.DOCUMENTS["PRIVACY"]["outputs"],
+                )
+
+                self.assertEqual(
+                    sync_documents.DOCUMENTS["README"]["outputs"][suffix].name,
+                    f"README.{suffix}.md",
+                )
+                self.assertEqual(
+                    sync_documents.DOCUMENTS["PRIVACY"]["outputs"][suffix].name,
+                    config["privacy_file"],
+                )
+
+                language_codes.append(config["language_code"])
+                issue_templates.append(config["issue_template"])
+                privacy_files.append(config["privacy_file"])
+
+        self.assertEqual(len(language_codes), len(set(language_codes)))
+        self.assertEqual(len(issue_templates), len(set(issue_templates)))
+        self.assertEqual(len(privacy_files), len(set(privacy_files)))
+
+        configured_languages = set(sync_documents.LANGUAGES)
+
+        self.assertEqual(
+            set(sync_documents.DOCUMENTS["README"]["outputs"]),
+            configured_languages,
+        )
+        self.assertEqual(
+            set(sync_documents.DOCUMENTS["PRIVACY"]["outputs"]),
+            configured_languages,
+        )
 
 
 if __name__ == "__main__":

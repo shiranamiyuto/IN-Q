@@ -11,11 +11,21 @@ logger = logging.getLogger(__name__)
 
 ROOT = Path(__file__).resolve().parent.parent
 
-SOURCE_FILE = ROOT / "README.md"
-
-OUTPUT_FILES = {
-    "en": ROOT / "readme" / "README.en.md",
-    "cn": ROOT / "readme" / "README.cn.md",
+DOCUMENTS = {
+    "README": {
+        "source": ROOT / "README.md",
+        "outputs": {
+            "en": ROOT / "readme" / "README.en.md",
+            "cn": ROOT / "readme" / "README.cn.md",
+        },
+    },
+    "PRIVACY": {
+        "source": ROOT / "PRIVACY.md",
+        "outputs": {
+            "en": ROOT / "privacy" / "PRIVACY.en.md",
+            "cn": ROOT / "privacy" / "PRIVACY.cn.md",
+        },
+    },
 }
 
 LANGUAGES = {
@@ -23,13 +33,27 @@ LANGUAGES = {
         "name": "English",
         "code": "English",
         "language_code": "en",
+        "issue_template": "bug-report-en.yml",
+        "privacy_file": "PRIVACY.en.md",
     },
     "cn": {
         "name": "Simplified Chinese",
         "code": "Simplified Chinese",
         "language_code": "zh",
+        "issue_template": "bug-report-cn.yml",
+        "privacy_file": "PRIVACY.cn.md",
     },
 }
+
+
+def is_supported_language(language: str) -> bool:
+    """Check whether a language code is supported."""
+
+    return any(
+        config["language_code"] == language
+        for config in LANGUAGES.values()
+    )
+
 
 LANGUAGE_SWITCH_PATTERN = re.compile(
     r"^\[日本語\]\([^)]*\)\s*\|\s*"
@@ -73,27 +97,40 @@ ISSUE_FORM_URL = (
 )
 
 
-def localize_readme_links(text: str, language: str) -> str:
-    issue_templates = {
-        "en": "bug-report-en.yml",
-        "zh": "bug-report-cn.yml",
-    }
+def localize_document_links(
+    text: str,
+    language: str,
+    document_name: str,
+) -> str:
+    """Apply deterministic language-specific document links."""
 
-    if language not in issue_templates:
-        raise ValueError(f"Unsupported README language: {language}")
+    if not is_supported_language(language):
+        raise ValueError(
+            f"Unsupported document language: {language}"
+        )
 
-    # Point to the matching language's issue form.
-    text = text.replace(
-        f"{ISSUE_FORM_URL}bug-report-ja.yml",
-        f"{ISSUE_FORM_URL}{issue_templates[language]}",
-    )
+    if document_name == "README":
+        language_config = next(
+            config
+            for config in LANGUAGES.values()
+            if config["language_code"] == language
+        )
 
-    # Translated README files are one directory below the repository root.
-    text = re.sub(
-        r"(\[[^\]]+\]\()PRIVACY\.md(\))",
-        r"\1../PRIVACY.md\2",
-        text,
-    )
+        issue_template = language_config["issue_template"]
+        privacy_file = language_config["privacy_file"]
+
+        # Point to the matching language's issue form.
+        text = text.replace(
+            f"{ISSUE_FORM_URL}bug-report-ja.yml",
+            f"{ISSUE_FORM_URL}{issue_template}",
+        )
+
+        # Point to the matching language's Privacy Policy.
+        text = re.sub(
+            r"(\[[^\]]+\]\()PRIVACY\.md(\))",
+            rf"\1../privacy/{privacy_file}\2",
+            text,
+        )
 
     return text
 
@@ -109,31 +146,39 @@ def remove_language_switch(text: str) -> str:
     return text
 
 
-def add_language_switch(text: str, language: str) -> str:
+def add_language_switch(
+    text: str,
+    language: str,
+    document_name: str = "README",
+) -> str:
     """Insert a fixed language switch below the document title."""
 
+    if not is_supported_language(language):
+        raise ValueError(f"Unsupported language: {language}")
+
     switches = {
-        "en": (
+        "README": (
             "[日本語](../README.md) | "
             "[English](README.en.md) | "
             "[简体中文](README.cn.md)"
         ),
-        "zh": (
-            "[日本語](../README.md) | "
-            "[English](README.en.md) | "
-            "[简体中文](README.cn.md)"
+        "PRIVACY": (
+            "[日本語](../PRIVACY.md) | "
+            "[English](PRIVACY.en.md) | "
+            "[简体中文](PRIVACY.cn.md)"
         ),
     }
 
-    if language not in switches:
-        raise ValueError(f"Unsupported language: {language}")
+    if document_name not in switches:
+        raise ValueError(f"Unsupported document: {document_name}")
 
     lines = text.splitlines()
 
     if not lines or not lines[0].startswith("# "):
-        raise ValueError("README must start with a level-one heading.")
+        raise ValueError(
+            f"{document_name} must start with a level-one heading."
+        )
 
-    # Remove an existing generated language switch if present.
     lines = [
         line for line in lines
         if not LANGUAGE_SWITCH_PATTERN.fullmatch(line)
@@ -144,7 +189,7 @@ def add_language_switch(text: str, language: str) -> str:
     return (
         lines[0]
         + "\n\n"
-        + switches[language]
+        + switches[document_name]
         + "\n\n"
         + body.rstrip()
         + "\n"
@@ -278,6 +323,7 @@ def translate_document(
     translator,
     target_language: str,
     target_language_code: str,
+    document_name: str = "README",
 ):
     """Translate a Markdown document while preserving its structure."""
 
@@ -298,13 +344,12 @@ def translate_document(
 
     translated = restore_text(translations[0], protected)
 
-    # Validate the original Markdown structure before localizing links.
     validate_markdown_structure(source, translated)
 
-    # Apply deterministic language-specific link replacements.
-    translated = localize_readme_links(
-        translated,
-        target_language_code,
+    translated = localize_document_links(
+        text=translated,
+        language=target_language_code,
+        document_name=document_name,
     )
 
     validate_translation_language(
@@ -316,38 +361,57 @@ def translate_document(
     return translated
 
 
-def generate_documents(source: str, translator):
+def generate_documents(
+    source: str,
+    translator,
+    document_name: str = "README",
+):
     """Generate and validate every target before writing any file."""
 
     generated = {}
 
     for suffix, language in LANGUAGES.items():
-        logger.info("Translating README to %s...", language["name"])
+        logger.info(
+            "Translating %s to %s...",
+            document_name,
+            language["name"],
+        )
 
         translated = translate_document(
             source=source,
             translator=translator,
             target_language=language["code"],
             target_language_code=language["language_code"],
+            document_name=document_name,
         )
 
         translated = add_language_switch(
             translated,
             language["language_code"],
+            document_name,
         )
 
         generated[suffix] = translated
 
-        logger.info("Validation passed: %s", language["name"])
+        logger.info(
+            "Validation passed: %s",
+            language["name"],
+        )
 
     return generated
 
 
-def write_documents(generated: dict):
+def write_documents(
+    generated: dict,
+    output_files: dict | None = None,
+):
     """Write generated documents after all translations have passed."""
 
+    if output_files is None:
+        output_files = DOCUMENTS["README"]["outputs"]
+
     for suffix, content in generated.items():
-        output_file = OUTPUT_FILES[suffix]
+        output_file = output_files[suffix]
 
         output_file.parent.mkdir(
             parents=True,
@@ -369,29 +433,54 @@ def write_documents(generated: dict):
 def main():
     load_dotenv(ROOT / ".env")
 
-    if not SOURCE_FILE.exists():
-        raise FileNotFoundError(
-            f"Japanese README not found: {SOURCE_FILE}"
-        )
-
-    source = SOURCE_FILE.read_text(encoding="utf-8")
-
-    if not source.strip():
-        raise ValueError("Japanese README is empty.")
-
-    logger.info("Source: %s", SOURCE_FILE.name)
-
     translator = create_translator()
 
-    # Generate and validate all targets before writing.
-    generated = generate_documents(
-        source=source,
-        translator=translator,
+    # Generate and validate every document before writing any file.
+    generated_documents = {}
+
+    for document_name, config in DOCUMENTS.items():
+        source_file = config["source"]
+
+        if not source_file.exists():
+            raise FileNotFoundError(
+                f"Japanese {document_name} not found: {source_file}"
+            )
+
+        source = source_file.read_text(encoding="utf-8")
+
+        if not source.strip():
+            raise ValueError(
+                f"Japanese {document_name} is empty."
+            )
+
+        logger.info("")
+        logger.info("Source: %s", source_file.name)
+
+        generated_documents[document_name] = generate_documents(
+            source=source,
+            translator=translator,
+            document_name=document_name,
+        )
+
+    # Write only after all translations have passed validation.
+    for document_name, generated in generated_documents.items():
+        write_documents(
+            generated=generated,
+            output_files=DOCUMENTS[document_name]["outputs"],
+        )
+
+    logger.info("")
+    logger.info("All document translations generated successfully.")
+
+
+def localize_readme_links(text: str, language: str) -> str:
+    """Backward-compatible README link localization."""
+
+    return localize_document_links(
+        text=text,
+        language=language,
+        document_name="README",
     )
-
-    write_documents(generated)
-
-    logger.info("All README translations generated successfully.")
 
 
 if __name__ == "__main__":

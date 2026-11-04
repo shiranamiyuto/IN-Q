@@ -16,15 +16,15 @@ Please use the [Bug Report Form](https://github.com/shiranamiyuto/IN-Q/issues/ne
 
 Before reporting, please check the following:
 
-- Check if the same issue already exists in [Existing Issues](https://github.com/shiranamiyuto/IN-Q/issues)
-- Specify the version of IN-Q / MHW
-- Describe the steps to reproduce, expected results, and actual results
-- Verify that the logs do not contain personal information or credentials
+- Check if the same issue exists in [Existing Issues](https://github.com/shiranamiyuto/IN-Q/issues)
+- Include the version of IN-Q / MHW
+- Include reproduction steps, expected results, and actual results
+- Make sure logs do not contain personal information or credentials
 
-Issues and attachments are publicly available on the internet. Do not post Steam credentials, save data, paths containing Windows usernames, IP addresses, etc.
+Issues and attachments are publicly available on the internet. Please do not post Steam credentials, save data, paths containing Windows usernames, IP addresses, etc.
 
-Please refer to [PRIVACY.md](../PRIVACY.md) for information on handling diagnostic data.
+Please refer to [PRIVACY.md](../privacy/PRIVACY.en.md) for how diagnostic information is handled.
 
 ## Supported Scope
 
-Currently, verification is only performed for solo play. Operation in multiplayer is not guaranteed.
+Currently, verification on actual hardware is limited to solo play. Operation in multiplayer is not guaranteed.
