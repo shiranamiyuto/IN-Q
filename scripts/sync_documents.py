@@ -1,3 +1,4 @@
+import argparse
 import logging
 import re
 from pathlib import Path
@@ -97,6 +98,31 @@ ISSUE_FORM_URL = (
 )
 
 
+def select_documents(
+    document_names: list[str] | None = None,
+) -> dict:
+    """Select documents to translate."""
+
+    if document_names is None:
+        return DOCUMENTS
+
+    if not document_names:
+        raise ValueError("At least one document must be selected.")
+
+    selected = {}
+
+    for name in document_names:
+        if name not in DOCUMENTS:
+            raise ValueError(f"Unsupported document: {name}")
+
+        if name in selected:
+            continue
+
+        selected[name] = DOCUMENTS[name]
+
+    return selected
+
+
 def localize_document_links(
     text: str,
     language: str,
@@ -149,7 +175,7 @@ def remove_language_switch(text: str) -> str:
 def add_language_switch(
     text: str,
     language: str,
-    document_name: str = "README",
+    document_name: str,
 ) -> str:
     """Insert a fixed language switch below the document title."""
 
@@ -323,7 +349,7 @@ def translate_document(
     translator,
     target_language: str,
     target_language_code: str,
-    document_name: str = "README",
+    document_name: str,
 ):
     """Translate a Markdown document while preserving its structure."""
 
@@ -364,7 +390,7 @@ def translate_document(
 def generate_documents(
     source: str,
     translator,
-    document_name: str = "README",
+    document_name: str,
 ):
     """Generate and validate every target before writing any file."""
 
@@ -403,12 +429,9 @@ def generate_documents(
 
 def write_documents(
     generated: dict,
-    output_files: dict | None = None,
+    output_files: dict,
 ):
     """Write generated documents after all translations have passed."""
-
-    if output_files is None:
-        output_files = DOCUMENTS["README"]["outputs"]
 
     for suffix, content in generated.items():
         output_file = output_files[suffix]
@@ -430,15 +453,17 @@ def write_documents(
         )
 
 
-def main():
+def main(document_names: list[str] | None = None):
     load_dotenv(ROOT / ".env")
+
+    selected_documents = select_documents(document_names)
 
     translator = create_translator()
 
-    # Generate and validate every document before writing any file.
+    # Generate and validate every selected document before writing any file.
     generated_documents = {}
 
-    for document_name, config in DOCUMENTS.items():
+    for document_name, config in selected_documents.items():
         source_file = config["source"]
 
         if not source_file.exists():
@@ -466,21 +491,11 @@ def main():
     for document_name, generated in generated_documents.items():
         write_documents(
             generated=generated,
-            output_files=DOCUMENTS[document_name]["outputs"],
+            output_files=selected_documents[document_name]["outputs"],
         )
 
     logger.info("")
     logger.info("All document translations generated successfully.")
-
-
-def localize_readme_links(text: str, language: str) -> str:
-    """Backward-compatible README link localization."""
-
-    return localize_document_links(
-        text=text,
-        language=language,
-        document_name="README",
-    )
 
 
 if __name__ == "__main__":
@@ -489,4 +504,16 @@ if __name__ == "__main__":
         format="%(message)s",
     )
 
-    main()
+    parser = argparse.ArgumentParser(
+        description="Synchronize translated documents."
+    )
+    parser.add_argument(
+        "--documents",
+        nargs="+",
+        choices=tuple(DOCUMENTS),
+        default=None,
+        help="Documents to translate. Defaults to all documents.",
+    )
+
+    args = parser.parse_args()
+    main(args.documents)

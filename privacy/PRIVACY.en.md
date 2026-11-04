@@ -4,9 +4,9 @@
 
 ## Basic Policy
 
-IN-Q V2 does not send diagnostic information externally until the user explicitly submits a bug report.
+IN-Q V2 does not send diagnostic information externally until the user explicitly executes a bug report.
 
-The body text and attachments posted to GitHub Issues will be public on the internet. Please review the contents on IN-Q's confirmation screen and GitHub's posting screen before submitting.
+The body text and attachments posted to GitHub Issues will be public on the internet. Please review the contents on IN-Q's confirmation screen and GitHub's posting screen before sending.
 
 ## Items Scheduled to be Included in Public Diagnostic Information
 
@@ -14,20 +14,20 @@ The body text and attachments posted to GitHub Issues will be public on the inte
 - MHW version or build
 - State transitions around the time of occurrence
 - Quest ID, stage, camp, number of participants
-- Timeouts, exceptions, and internal processing failures
+- Timeouts, exceptions, internal processing failures
 - MOD loader version
-- List of installed MOD filenames (only when explicitly selected by the user)
+- List of installed MOD file names (only when explicitly selected by the user)
 
 ## Items Not Collected or Sent
 
-- Steam authentication information
+- Steam credentials
 - Save data itself
-- Chat message body
-- Absolute paths containing Windows usernames
+- Chat body text
+- Absolute paths including Windows usernames
 - IP addresses
 - Passwords, API keys, tokens
 - Other authentication information
 
-## Submission Method
+## Transmission Method
 
-Diagnostic information is formatted into a reviewable format for the user before sending. The user performs the final submission action on the GitHub posting screen opened by IN-Q. Developer GitHub credentials are never embedded in IN-Q.
+Diagnostic information is formatted into a format that the user can review before sending. The user performs the final submission operation on the GitHub posting screen opened by IN-Q. Developer GitHub credentials will not be embedded in IN-Q.

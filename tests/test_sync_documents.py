@@ -1,11 +1,10 @@
-
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 from scripts import sync_documents
 
 
-class TestLocalizeReadmeLinks(unittest.TestCase):
+class TestLocalizeReadmeDocumentLinks(unittest.TestCase):
     """Test README-specific link localization."""
 
     def test_english_links(self):
@@ -15,7 +14,11 @@ class TestLocalizeReadmeLinks(unittest.TestCase):
             "[Privacy Policy](PRIVACY.md)"
         )
 
-        result = sync_documents.localize_readme_links(text, "en")
+        result = sync_documents.localize_document_links(
+            text=text,
+            language="en",
+            document_name="README",
+        )
 
         self.assertIn("template=bug-report-en.yml", result)
         self.assertIn(
@@ -30,7 +33,11 @@ class TestLocalizeReadmeLinks(unittest.TestCase):
             "[隐私政策](PRIVACY.md)"
         )
 
-        result = sync_documents.localize_readme_links(text, "zh")
+        result = sync_documents.localize_document_links(
+            text=text,
+            language="zh",
+            document_name="README",
+        )
 
         self.assertIn("template=bug-report-cn.yml", result)
         self.assertIn(
@@ -40,7 +47,11 @@ class TestLocalizeReadmeLinks(unittest.TestCase):
 
     def test_unsupported_language(self):
         with self.assertRaises(ValueError):
-            sync_documents.localize_readme_links("README", "ja")
+            sync_documents.localize_document_links(
+                text="README",
+                language="ja",
+                document_name="README",
+            )
 
 
 class TestLocalizePrivacyLinks(unittest.TestCase):
@@ -76,7 +87,11 @@ class TestLanguageSwitch(unittest.TestCase):
     def test_add_english_language_switch(self):
         source = "# IN-Q V2\n\nEnglish content.\n"
 
-        result = sync_documents.add_language_switch(source, "en")
+        result = sync_documents.add_language_switch(
+            source,
+            "en",
+            "README",
+        )
 
         self.assertIn(
             "[English](README.en.md)",
@@ -95,7 +110,11 @@ class TestLanguageSwitch(unittest.TestCase):
     def test_add_chinese_language_switch(self):
         source = "# IN-Q V2\n\n中文内容。\n"
 
-        result = sync_documents.add_language_switch(source, "zh")
+        result = sync_documents.add_language_switch(
+            source,
+            "zh",
+            "README",
+        )
 
         self.assertIn(
             "[简体中文](README.cn.md)",
@@ -107,6 +126,7 @@ class TestLanguageSwitch(unittest.TestCase):
             sync_documents.add_language_switch(
                 "Document without heading.",
                 "en",
+                "README",
             )
 
 
@@ -284,6 +304,7 @@ class TestTranslateDocument(unittest.TestCase):
             translator=translator,
             target_language="English",
             target_language_code="en",
+            document_name="README",
         )
 
         self.assertIn(
@@ -307,6 +328,7 @@ class TestTranslateDocument(unittest.TestCase):
                 translator=translator,
                 target_language="English",
                 target_language_code="en",
+                document_name="README",
             )
 
     def test_unknown_language_is_allowed(self):
@@ -323,6 +345,7 @@ class TestTranslateDocument(unittest.TestCase):
             translator=translator,
             target_language="English",
             target_language_code="en",
+            document_name="README",
         )
 
         self.assertIn("Short text.", result)
@@ -358,6 +381,7 @@ class TestTranslateDocument(unittest.TestCase):
             translator=translator,
             target_language="English",
             target_language_code="en",
+            document_name="README",
         )
 
         self.assertIn("template=bug-report-en.yml", result)
@@ -386,6 +410,7 @@ class TestTranslateDocument(unittest.TestCase):
             translator=translator,
             target_language="Simplified Chinese",
             target_language_code="zh",
+            document_name="README",
         )
 
         self.assertIn("bug-report-cn.yml", result)
@@ -457,6 +482,119 @@ class TestDocumentConfiguration(unittest.TestCase):
         self.assertEqual(
             set(sync_documents.DOCUMENTS["PRIVACY"]["outputs"]),
             configured_languages,
+        )
+
+
+class TestSelectDocuments(unittest.TestCase):
+    """Test document selection."""
+
+    def test_default_selects_all_documents(self):
+        result = sync_documents.select_documents()
+
+        self.assertEqual(
+            list(result),
+            ["README", "PRIVACY"],
+        )
+
+    def test_select_readme_only(self):
+        result = sync_documents.select_documents(["README"])
+
+        self.assertEqual(
+            list(result),
+            ["README"],
+        )
+
+    def test_select_privacy_only(self):
+        result = sync_documents.select_documents(["PRIVACY"])
+
+        self.assertEqual(
+            list(result),
+            ["PRIVACY"],
+        )
+
+    def test_select_both_documents(self):
+        result = sync_documents.select_documents(
+            ["README", "PRIVACY"]
+        )
+
+        self.assertEqual(
+            list(result),
+            ["README", "PRIVACY"],
+        )
+
+    def test_duplicate_document_is_ignored(self):
+        result = sync_documents.select_documents(
+            ["README", "README"]
+        )
+
+        self.assertEqual(
+            list(result),
+            ["README"],
+        )
+
+    def test_empty_selection_fails(self):
+        with self.assertRaises(ValueError):
+            sync_documents.select_documents([])
+
+    def test_unsupported_document_fails(self):
+        with self.assertRaises(ValueError):
+            sync_documents.select_documents(["UNKNOWN"])
+
+
+class TestMain(unittest.TestCase):
+    """Test document synchronization entry point."""
+
+    def test_main_translates_only_selected_documents(self):
+
+        source_file = Mock()
+        source_file.exists.return_value = True
+        source_file.name = "README.md"
+        source_file.read_text.return_value = "# README"
+
+        readme_outputs = {
+            "en": sync_documents.ROOT / "readme" / "README.en.md",
+            "cn": sync_documents.ROOT / "readme" / "README.cn.md",
+        }
+
+        documents = {
+            "README": {
+                "source": source_file,
+                "outputs": readme_outputs,
+            },
+            "PRIVACY": {
+                "source": Mock(),
+                "outputs": {},
+            },
+        }
+
+        with (
+            patch.dict(sync_documents.DOCUMENTS, documents, clear=True),
+            patch("scripts.sync_documents.load_dotenv"),
+            patch("scripts.sync_documents.create_translator"),
+            patch("scripts.sync_documents.generate_documents") as generate,
+            patch("scripts.sync_documents.write_documents") as write,
+        ):
+            generate.return_value = {
+                "en": "English README",
+                "cn": "Chinese README",
+            }
+
+            sync_documents.main(["README"])
+
+        generate.assert_called_once()
+        self.assertEqual(
+            generate.call_args.kwargs["document_name"],
+            "README",
+        )
+
+        write.assert_called_once()
+        self.assertEqual(
+            write.call_args.kwargs["output_files"],
+            readme_outputs,
+        )
+
+        source_file.read_text.assert_called_once_with(
+            encoding="utf-8"
         )
 
 
