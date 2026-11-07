@@ -98,21 +98,21 @@ jobs:
             README)
               paths=(
                 readme/README.en.md
-                readme/README.cn.md
+                readme/README.zh.md
               )
               ;;
             PRIVACY)
               paths=(
                 privacy/PRIVACY.en.md
-                privacy/PRIVACY.cn.md
+                privacy/PRIVACY.zh.md
               )
               ;;
             "README PRIVACY")
               paths=(
                 readme/README.en.md
-                readme/README.cn.md
+                readme/README.zh.md
                 privacy/PRIVACY.en.md
-                privacy/PRIVACY.cn.md
+                privacy/PRIVACY.zh.md
               )
               ;;
             *)

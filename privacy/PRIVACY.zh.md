@@ -1,6 +1,6 @@
 # 诊断信息与隐私
 
-[日本語](../PRIVACY.md) | [English](PRIVACY.en.md) | [简体中文](PRIVACY.cn.md)
+[日本語](../PRIVACY.md) | [English](PRIVACY.en.md) | [简体中文](PRIVACY.zh.md)
 
 ## 基本方针
 

@@ -29,7 +29,7 @@ LANGUAGES = {
         "code": "English",
         "language_code": "en",
     },
-    "cn": {
+    "zh": {
         "name": "Simplified Chinese",
         "code": "Simplified Chinese",
         "language_code": "zh",

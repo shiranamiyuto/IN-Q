@@ -1,6 +1,6 @@
 # Diagnostic Information and Privacy
 
-[日本語](../PRIVACY.md) | [English](PRIVACY.en.md) | [简体中文](PRIVACY.cn.md)
+[日本語](../PRIVACY.md) | [English](PRIVACY.en.md) | [简体中文](PRIVACY.zh.md)
 
 ## Basic Policy
 

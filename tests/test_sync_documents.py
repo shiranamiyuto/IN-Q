@@ -39,9 +39,9 @@ class TestLocalizeReadmeDocumentLinks(unittest.TestCase):
             document_name="README",
         )
 
-        self.assertIn("template=bug-report-cn.yml", result)
+        self.assertIn("template=bug-report-zh.yml", result)
         self.assertIn(
-            "[隐私政策](../privacy/PRIVACY.cn.md)",
+            "[隐私政策](../privacy/PRIVACY.zh.md)",
             result,
         )
 
@@ -117,7 +117,7 @@ class TestLanguageSwitch(unittest.TestCase):
         )
 
         self.assertIn(
-            "[简体中文](README.cn.md)",
+            "[简体中文](README.zh.md)",
             result,
         )
 
@@ -149,7 +149,7 @@ class TestPrivacyLanguageSwitch(unittest.TestCase):
             result,
         )
         self.assertIn(
-            "[简体中文](PRIVACY.cn.md)",
+            "[简体中文](PRIVACY.zh.md)",
             result,
         )
 
@@ -169,7 +169,7 @@ class TestPrivacyLanguageSwitch(unittest.TestCase):
             result,
         )
         self.assertIn(
-            "[简体中文](PRIVACY.cn.md)",
+            "[简体中文](PRIVACY.zh.md)",
             result,
         )
 
@@ -413,8 +413,8 @@ class TestTranslateDocument(unittest.TestCase):
             document_name="README",
         )
 
-        self.assertIn("bug-report-cn.yml", result)
-        self.assertIn("../privacy/PRIVACY.cn.md", result)
+        self.assertIn("bug-report-zh.yml", result)
+        self.assertIn("../privacy/PRIVACY.zh.md", result)
 
 
 class TestDocumentConfiguration(unittest.TestCase):
@@ -426,8 +426,8 @@ class TestDocumentConfiguration(unittest.TestCase):
             sync_documents.ROOT / "privacy" / "PRIVACY.en.md",
         )
         self.assertEqual(
-            sync_documents.DOCUMENTS["PRIVACY"]["outputs"]["cn"],
-            sync_documents.ROOT / "privacy" / "PRIVACY.cn.md",
+            sync_documents.DOCUMENTS["PRIVACY"]["outputs"]["zh"],
+            sync_documents.ROOT / "privacy" / "PRIVACY.zh.md",
         )
 
     def test_all_languages_have_required_configuration(self):
@@ -553,7 +553,7 @@ class TestMain(unittest.TestCase):
 
         readme_outputs = {
             "en": sync_documents.ROOT / "readme" / "README.en.md",
-            "cn": sync_documents.ROOT / "readme" / "README.cn.md",
+            "zh": sync_documents.ROOT / "readme" / "README.zh.md",
         }
 
         documents = {
@@ -576,7 +576,7 @@ class TestMain(unittest.TestCase):
         ):
             generate.return_value = {
                 "en": "English README",
-                "cn": "Chinese README",
+                "zh": "Chinese README",
             }
 
             sync_documents.main(["README"])

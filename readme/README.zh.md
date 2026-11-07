@@ -1,6 +1,6 @@
 # IN-Q V2
 
-[日本語](../README.md) | [English](README.en.md) | [简体中文](README.cn.md)
+[日本語](../README.md) | [English](README.en.md) | [简体中文](README.zh.md)
 
 这是一个专为《怪物猎人：世界 冰原》设计的任务重新开始辅助工具。
 
@@ -12,7 +12,7 @@
 
 ## 报告问题
 
-请使用 [问题反馈表单](https://github.com/shiranamiyuto/IN-Q/issues/new?template=bug-report-cn.yml)。
+请使用 [问题反馈表单](https://github.com/shiranamiyuto/IN-Q/issues/new?template=bug-report-zh.yml)。
 
 在反馈之前，请确认以下几点：
 
@@ -23,7 +23,7 @@
 
 Issue 和附件将在互联网上公开。请勿发布 Steam 认证信息、存档数据、包含 Windows 用户名的路径、IP 地址等内容。
 
-关于诊断信息的处理，请参考 [PRIVACY.md](../privacy/PRIVACY.cn.md)。
+关于诊断信息的处理，请参考 [PRIVACY.md](../privacy/PRIVACY.zh.md)。
 
 ## 支持范围
 

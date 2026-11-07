@@ -1,6 +1,6 @@
 # IN-Q V2
 
-[日本語](README.md) | [English](readme/README.en.md) | [简体中文](readme/README.cn.md)
+[日本語](README.md) | [English](readme/README.en.md) | [简体中文](readme/README.zh.md)
 
 Monster Hunter: World Iceborne向けのクエスト再スタート支援ツールです。
 

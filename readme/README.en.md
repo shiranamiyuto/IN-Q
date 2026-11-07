@@ -1,6 +1,6 @@
 # IN-Q V2
 
-[日本語](../README.md) | [English](README.en.md) | [简体中文](README.cn.md)
+[日本語](../README.md) | [English](README.en.md) | [简体中文](README.zh.md)
 
 This is a quest restart support tool for Monster Hunter: World Iceborne.
 

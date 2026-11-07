@@ -17,14 +17,14 @@ DOCUMENTS = {
         "source": ROOT / "README.md",
         "outputs": {
             "en": ROOT / "readme" / "README.en.md",
-            "cn": ROOT / "readme" / "README.cn.md",
+            "zh": ROOT / "readme" / "README.zh.md",
         },
     },
     "PRIVACY": {
         "source": ROOT / "PRIVACY.md",
         "outputs": {
             "en": ROOT / "privacy" / "PRIVACY.en.md",
-            "cn": ROOT / "privacy" / "PRIVACY.cn.md",
+            "zh": ROOT / "privacy" / "PRIVACY.zh.md",
         },
     },
 }
@@ -37,12 +37,12 @@ LANGUAGES = {
         "issue_template": "bug-report-en.yml",
         "privacy_file": "PRIVACY.en.md",
     },
-    "cn": {
+    "zh": {
         "name": "Simplified Chinese",
         "code": "Simplified Chinese",
         "language_code": "zh",
-        "issue_template": "bug-report-cn.yml",
-        "privacy_file": "PRIVACY.cn.md",
+        "issue_template": "bug-report-zh.yml",
+        "privacy_file": "PRIVACY.zh.md",
     },
 }
 
@@ -186,12 +186,12 @@ def add_language_switch(
         "README": (
             "[日本語](../README.md) | "
             "[English](README.en.md) | "
-            "[简体中文](README.cn.md)"
+            "[简体中文](README.zh.md)"
         ),
         "PRIVACY": (
             "[日本語](../PRIVACY.md) | "
             "[English](PRIVACY.en.md) | "
-            "[简体中文](PRIVACY.cn.md)"
+            "[简体中文](PRIVACY.zh.md)"
         ),
     }
 
