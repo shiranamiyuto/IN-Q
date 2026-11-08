@@ -64,6 +64,7 @@ jobs:
           branch: automation/update-issue-templates
           base: ${{ github.ref_name }}
           delete-branch: true
+          draft: true
           commit-message: "chore: update translated issue templates"
           title: "不具合報告テンプレートの翻訳を更新"
           body: |
