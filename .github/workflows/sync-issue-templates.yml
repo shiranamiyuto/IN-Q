@@ -4,7 +4,7 @@ name: Sync Issue Templates
 on:
   push:
     branches:
-      - multi-language-support
+      - main
     paths:
       - ".github/ISSUE_TEMPLATE/bug-report-ja.yml"
       - "scripts/**"
