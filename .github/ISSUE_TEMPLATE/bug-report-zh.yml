@@ -1,0 +1,115 @@
+name: 错误报告
+description: 报告在 IN-Q V2 中发生的问题
+title: "[Bug] "
+labels:
+- bug
+body:
+- type: markdown
+  attributes:
+    value: |
+      感谢您的报告。Issue 的内容和附件将在互联网上公开。
+      请勿发布个人信息、Steam 凭证、存档数据、IP 地址等。
+
+- type: input
+  id: inq_version
+  attributes:
+    label: IN-Q 版本
+    description: 请输入显示在 IN-Q 界面上的版本。
+    placeholder: "例如: 0.4.42"
+  validations:
+    required: true
+
+- type: input
+  id: mhw_build
+  attributes:
+    label: MHW 版本或构建号
+    placeholder: "例如: 421810"
+  validations:
+    required: true
+
+- type: dropdown
+  id: play_mode
+  attributes:
+    label: 游戏环境
+    options:
+    - 单人
+    - 多人（房主）
+    - 多人（加入者）
+    - 未知
+  validations:
+    required: true
+
+- type: input
+  id: quest_id
+  attributes:
+    label: 任务 ID
+    description: 仅在已知时填写。
+    placeholder: "例如: 66845"
+
+- type: textarea
+  id: summary
+  attributes:
+    label: 问题概述
+    description: 请简要描述发生了什么。
+  validations:
+    required: true
+
+- type: textarea
+  id: steps
+  attributes:
+    label: 复现步骤
+    description: 请按顺序描述导致问题发生的步骤。
+    placeholder: |
+      1. 启动 MHW 和 IN-Q
+      2. 选择任务
+      3. 执行重新开始
+  validations:
+    required: true
+
+- type: textarea
+  id: expected
+  attributes:
+    label: 期望的结果
+  validations:
+    required: true
+
+- type: textarea
+  id: actual
+  attributes:
+    label: 实际的结果
+  validations:
+    required: true
+
+- type: dropdown
+  id: frequency
+  attributes:
+    label: 复现率
+    options:
+    - 每次
+    - 高概率
+    - 有时
+    - 仅 1 次
+    - 未复现
+  validations:
+    required: true
+
+- type: textarea
+  id: mods
+  attributes:
+    label: 已安装的 MOD
+    description: 若怀疑存在冲突，请在可公开的范围内填写。
+
+- type: textarea
+  id: logs
+  attributes:
+    label: 诊断日志
+    description: 请粘贴 IN-Q 生成的公开用诊断日志。发布前请检查其内容。
+    render: text
+
+- type: checkboxes
+  id: public_confirmation
+  attributes:
+    label: 确认公开内容
+    options:
+    - label: 我已确认发布内容和日志中不包含个人信息、凭证信息以及存档数据。
+      required: true

@@ -1,0 +1,190 @@
+name: Sync Translated Documents
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "README.md"
+      - "PRIVACY.md"
+      - "scripts/sync_documents.py"
+      - "scripts/translators/**"
+      - "requirements.txt"
+      - ".github/workflows/sync-documents.yml"
+
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: sync-translated-documents
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository default branch
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+
+      - name: Determine documents to translate
+        id: selection
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BEFORE: ${{ github.event.before }}
+          AFTER: ${{ github.sha }}
+        run: |
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            documents=(README PRIVACY)
+
+          elif [[ -z "$BEFORE" || "$BEFORE" =~ ^0+$ ]]; then
+            documents=(README PRIVACY)
+
+          else
+            changed_files="$(git diff --name-only "$BEFORE" "$AFTER")"
+
+            translate_all=false
+            readme_changed=false
+            privacy_changed=false
+
+            while IFS= read -r file; do
+              case "$file" in
+                README.md)
+                  readme_changed=true
+                  ;;
+                PRIVACY.md)
+                  privacy_changed=true
+                  ;;
+                *)
+                  translate_all=true
+                  ;;
+              esac
+            done <<< "$changed_files"
+
+            if [[ "$translate_all" == "true" ]]; then
+              documents=(README PRIVACY)
+            else
+              documents=()
+
+              if [[ "$readme_changed" == "true" ]]; then
+                documents+=(README)
+              fi
+
+              if [[ "$privacy_changed" == "true" ]]; then
+                documents+=(PRIVACY)
+              fi
+            fi
+
+            if [[ ${#documents[@]} -eq 0 ]]; then
+              documents=(README PRIVACY)
+            fi
+          fi
+
+          echo "Documents to translate: ${documents[*]}"
+          echo "documents=${documents[*]}" >> "$GITHUB_OUTPUT"
+
+      - name: Determine generated files to commit
+        id: paths
+        env:
+          DOCUMENTS: ${{ steps.selection.outputs.documents }}
+        run: |
+          case "$DOCUMENTS" in
+            README)
+              paths=(
+                readme/README.en.md
+                readme/README.zh.md
+              )
+              ;;
+            PRIVACY)
+              paths=(
+                privacy/PRIVACY.en.md
+                privacy/PRIVACY.zh.md
+              )
+              ;;
+            "README PRIVACY")
+              paths=(
+                readme/README.en.md
+                readme/README.zh.md
+                privacy/PRIVACY.en.md
+                privacy/PRIVACY.zh.md
+              )
+              ;;
+            *)
+              echo "::error::Unexpected document selection: $DOCUMENTS"
+              exit 1
+              ;;
+          esac
+
+          echo "Files to commit:"
+          printf '%s\n' "${paths[@]}"
+
+          {
+            echo "add_paths<<EOF"
+            printf '%s\n' "${paths[@]}"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Validate configuration
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_MODEL: ${{ vars.GEMINI_MODEL }}
+        run: |
+          if [ -z "$GEMINI_API_KEY" ]; then
+            echo "::error::GEMINI_API_KEY is not configured."
+            exit 1
+          fi
+
+          if [ -z "$GEMINI_MODEL" ]; then
+            echo "::error::GEMINI_MODEL is not configured."
+            exit 1
+          fi
+
+      - name: Generate translated documents
+        env:
+          TRANSLATOR_PROVIDER: gemini
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_MODEL: ${{ vars.GEMINI_MODEL }}
+          DOCUMENTS: ${{ steps.selection.outputs.documents }}
+        run: |
+          read -r -a selected_documents <<< "$DOCUMENTS"
+
+          python -m scripts.sync_documents \
+            --documents "${selected_documents[@]}"
+
+      - name: Create or update pull request
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: automation/update-translated-documents
+          base: ${{ github.event.repository.default_branch }}
+          delete-branch: true
+          draft: true
+          add-paths: ${{ steps.paths.outputs.add_paths }}
+          title: "翻訳ドキュメントを更新"
+          body: |
+            日本語の原文をもとに、対象ドキュメントの英語版と簡体字中国語版を自動生成しました。
+
+            ## 確認事項
+
+            - README の翻訳内容とリンクを確認してください。
+            - PRIVACY の翻訳内容が日本語原文の意味を正確に反映しているか確認してください。
+            - PRIVACY はユーザーデータの取り扱いに関する公開文書です。翻訳の正確性と実際のソフトウェアの動作を必ず人手で確認してください。
+
+            問題がなければ、この PR をマージしてください。
+          commit-message: "chore: update translated documents"
