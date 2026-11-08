@@ -14,17 +14,17 @@ You can download the latest version from [Releases](https://github.com/shiranami
 
 Please use the [Bug Report Form](https://github.com/shiranamiyuto/IN-Q/issues/new?template=bug-report-en.yml).
 
-Before reporting, please check the following points:
+Before reporting, please check the following:
 
 - Check if the same issue already exists in [Existing Issues](https://github.com/shiranamiyuto/IN-Q/issues)
 - Include the version of IN-Q / MHW
-- Describe the steps to reproduce, expected results, and actual results
-- Make sure the logs do not contain personal information or credentials
+- Include steps to reproduce, expected results, and actual results
+- Ensure that logs do not contain personal information or authentication credentials
 
-Issues and attachments are publicly visible on the internet. Please do not post Steam credentials, save data, paths containing Windows usernames, IP addresses, etc.
+Issues and attachments will be published on the internet. Please do not post Steam credentials, save data, paths containing Windows usernames, IP addresses, etc.
 
-Please refer to [PRIVACY.md](../privacy/PRIVACY.en.md) for how diagnostic information is handled.
+Please refer to [PRIVACY.md](../privacy/PRIVACY.en.md) regarding the handling of diagnostic information.
 
 ## Supported Scope
 
-Currently, verification on actual hardware is limited to solo play. Operation in multiplayer is not guaranteed.
+Currently, verified hardware testing is limited to solo play. Operation in multiplayer is not guaranteed.
